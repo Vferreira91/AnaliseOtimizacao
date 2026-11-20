@@ -1,0 +1,55 @@
+# Infraestrutura dos experimentos.
+# Os limites de CPU/memória mantêm o ambiente equivalente entre execuções (item 6.5).
+# A aplicação Spring Boot será adicionada como serviço na Fase 1.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ao-postgres
+    environment:
+      POSTGRES_DB: pedidos
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - max_connections=200
+      - -c
+      - track_io_timing=on
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d pedidos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ao-redis
+    ports:
+      - "6379:6379"
+    # Sem persistência: o cache deve começar vazio a cada execução controlada.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

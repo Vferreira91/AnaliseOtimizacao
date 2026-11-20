@@ -1,0 +1,28 @@
+# Java / Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# Resultados brutos do k6 (os gráficos finais em docs/ são versionados)
+k6/resultados/
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Variáveis locais
+.env
