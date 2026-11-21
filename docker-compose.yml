@@ -1,6 +1,7 @@
 # Infraestrutura dos experimentos.
 # Os limites de CPU/memória mantêm o ambiente equivalente entre execuções (item 6.5).
-# A aplicação Spring Boot será adicionada como serviço na Fase 1.
+# Durante o desenvolvimento a aplicação roda fora do Docker (cd app && ./mvnw spring-boot:run).
+# Ela entra aqui como serviço, com limites próprios, na Fase 4 (testes de carga).
 
 services:
   postgres:

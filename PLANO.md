@@ -226,13 +226,13 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [x] Repositório Git e plano de projeto
 - [x] `docker-compose.yml` com Postgres e Redis
 - [ ] Publicar o repositório no GitHub e adicionar o grupo
-- [ ] Preparar o ambiente no Zorin OS
+- [x] Preparar o ambiente no Zorin OS (Docker 29.10 + Compose 5.8, k6 2.4.0, JDK 21 Temurin + Maven 3.10.1 via SDKMAN, Python 3.12 + venv; Postgres 16.16 e Redis 7.4.12 sobem "healthy")
 
 ### Fase 1 — Base da aplicação
-- [ ] Projeto Spring Boot (Web, Data JPA, Cache, Redis, Actuator, Flyway, PostgreSQL)
-- [ ] Migrations do schema (sem índices além das PKs)
-- [ ] Script de seed parametrizável + conferência de volumes
-- [ ] Contador de SQL por requisição + cabeçalhos `X-SQL-Count` / `X-Elapsed-Ms`
+- [x] Projeto Spring Boot 3.5.16 (Web, Data JPA, Cache, Redis, Actuator, Flyway, PostgreSQL) em `app/`, pacote `br.edu.aos.pedidos`
+- [x] Migrations do schema (sem índices além das PKs): `db/migration/V1__schema.sql`, empacotada no jar pelo `pom.xml`
+- [x] Script de seed parametrizável + conferência de volumes: `db/seed/popular.sh` (seed reprodutível via `setseed`; ~55 s para o volume padrão)
+- [x] Contador de SQL por requisição (proxy JDBC `datasource-proxy`) + cabeçalhos `X-SQL-Count` / `X-SQL-Ms` / `X-Elapsed-Ms`, inclusive em respostas de erro
 
 ### Fase 2 — Item 2 (consultas)
 - [ ] Entidades `PedidoLazy` / `PedidoEager` + DTOs de resposta
@@ -247,6 +247,7 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [ ] Executar e documentar o experimento obrigatório (3.4)
 
 ### Fase 4 — Item 3 (carga)
+- [ ] Serviço da aplicação no `docker-compose.yml` (Dockerfile + limites de CPU/memória, decisão D6)
 - [ ] Scripts k6 dos cenários C1–C3 (+ C4 opcional)
 - [ ] Runner que executa cargas × repetições e salva os JSON
 - [ ] Rodada completa no Linux com o protocolo da seção 6.2
