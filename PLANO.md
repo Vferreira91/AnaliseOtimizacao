@@ -225,7 +225,7 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 ### Fase 0 — Infraestrutura
 - [x] Repositório Git e plano de projeto
 - [x] `docker-compose.yml` com Postgres e Redis
-- [ ] Publicar o repositório no GitHub e adicionar o grupo
+- [x] Publicar o repositório no GitHub: `Vferreira91/AnaliseOtimizacao`, **privado** (trabalho individual, sem colaboradores)
 - [x] Preparar o ambiente no Zorin OS (Docker 29.10 + Compose 5.8, k6 2.4.0, JDK 21 Temurin + Maven 3.10.1 via SDKMAN, Python 3.12 + venv; Postgres 16.16 e Redis 7.4.12 sobem "healthy")
 
 ### Fase 1 — Base da aplicação
@@ -277,5 +277,5 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 ## 11. Pendências / a decidir
 
 - [ ] Prazo de entrega e data da apresentação
-- [ ] Integrantes do grupo e divisão das fases
-- [ ] Nome do repositório no GitHub (público ou privado)
+- [x] Integrantes do grupo e divisão das fases: desenvolvido individualmente (os demais alunos do grupo fazem outros trabalhos)
+- [x] Nome do repositório no GitHub: `Vferreira91/AnaliseOtimizacao`, privado

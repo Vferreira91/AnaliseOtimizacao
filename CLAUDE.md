@@ -16,7 +16,7 @@ O `README.md` será o **relatório técnico final** (entregável), com as 7 seç
 
 ## Estado atual
 
-- Fase 0 concluída: repositório, PLANO.md e `docker-compose.yml` (Postgres 16 + Redis 7). Ambiente do Zorin OS preparado (Docker, k6, JDK 21 e Maven via SDKMAN, Python venv). Falta só publicar no GitHub.
+- Fase 0 concluída: repositório, PLANO.md e `docker-compose.yml` (Postgres 16 + Redis 7). Ambiente do Zorin OS preparado (Docker, k6, JDK 21 e Maven via SDKMAN, Python venv). Repositório no GitHub: `Vferreira91/AnaliseOtimizacao` (privado; trabalho individual, sem colaboradores).
 - Fase 1 concluída: Spring Boot 3.5.16 em `app/` (pacote `br.edu.aos.pedidos`), migration `db/migration/V1__schema.sql`, seed `db/seed/popular.sh` e contador de SQL (`config/ContadorSql*`, `MetricasRequisicaoFilter`). Entidades por enquanto: `Categoria`, `Produto`, `Cliente`; endpoint de exemplo `GET /api/clientes/{id}`.
 - **Próximo passo: Fase 2** (consultas): `PedidoLazy` / `PedidoEager`, endpoints de comparação, índices e `EXPLAIN ANALYZE`.
 - Ambiente de desenvolvimento e de medição: **Linux (Zorin OS, base Ubuntu)**, com Docker nativo.
