@@ -170,7 +170,7 @@ Observado na rodada de 2026-11-21 (planos em `docs/evidencias/explain/`), com di
 
 ### 6.2 Protocolo de execução
 
-- Cargas: **10 / 50 / 100 / 200 VUs**, cada uma com 30 s de aquecimento (descartado) + 60 s de coleta.
+- Cargas: **10 / 50 / 100 / 200 VUs**, cada uma com 30 s de aquecimento (descartado) + 60 s de coleta. Desde a rodada 2, antes disso há 30 s de **pré-aquecimento a 10 VUs** (descartado; ver 6.5).
 - **3 repetições** por combinação; relatar a média e a variação.
 - Antes de cada rodada: reiniciar a aplicação, limpar ou pré-aquecer o cache conforme o cenário, registrar a contagem de linhas das tabelas.
 - Limites fixos no Compose (ex.: app 2 CPUs / 1 GB; Postgres 2 CPUs / 2 GB) e nada pesado rodando em paralelo.
@@ -200,6 +200,38 @@ Observações a confirmar na rodada completa (não são resultados finais):
 - Produto: a API fica perto do limite de 2 CPUs (~160% de CPU) e o Postgres folgado, ou seja, o gargalo é a aplicação. O p95 de ~65 ms com 10 VUs, contra uma mediana de ~2–5 ms, sugere *throttling* de CPU do container (cota em janelas de 100 ms); falta verificar (`cpu.stat` do cgroup).
 - Relatório sem cache: o Postgres satura as 2 CPUs; com 100 VUs o pool de 10 conexões esgota e as requisições falham após 30 s (`Connection is not available`).
 - Relatório com cache numa coleta curta: todos os VUs dão MISS ao mesmo tempo no início e repetem a consulta pesada (*cache stampede*), e o cache não chega a ajudar em 10 s.
+
+### 6.5 Rodada completa 1 e correção do protocolo (2026-11-22)
+
+A rodada `completa` (132 execuções, 3h41) rodou sem falhas de infraestrutura. Evidências em `docs/evidencias/carga-rodada1/`: `resumo.md`, os gráficos e `diagnostico.md`. A análise mostrou:
+- **Throttling confirmado** (`cpu.stat` do cgroup): nas variantes rápidas, a API esgota a cota de 2 CPUs em ~99% dos períodos de 100 ms, já com 10 VUs. Isso é coerente com p95 de 1 ms e p99 de ~40 ms a 10 VUs.
+- **Aquecimento insuficiente da JVM sob alta concorrência.** Logo após o restart, 30 s a 100 VUs não bastam: com centenas de threads disputando a cota, o compilador JIT fica sem CPU. `produto-sem` a 100 VUs: 3.306 req/s na 1ª execução após o restart e ~7.250 nas seguintes. Com um pré-aquecimento de 30 s a 10 VUs, a 1ª execução já fica em ~7.250. Na rodada 1, portanto, a queda de throughput com mais VUs nas variantes limitadas pela CPU da API mede a JVM ainda aquecendo. As variantes limitadas pelo Postgres foram pouco afetadas.
+- **Correção:** o `k6/rodar.sh` pré-aquece cada execução (`PREAQUECIMENTO=30s` a 10 VUs, mesma variante, cache esvaziado em seguida). A **rodada `completa2`** (~5 h) usa esse protocolo, e é dela que saem os números do relatório. A rodada 1 fica como evidência do problema, com material para a discussão de metodologia.
+- **Relatório sem cache, já confirmado:** o Postgres fica saturado (200% de CPU) e o pool de 10 conexões esgota. A partir de 50 VUs, 55–91% das requisições falham (`Connection is not available, request timed out after 30000ms`, HTTP 500). A 200 VUs, algumas estouram também o timeout de 60 s do k6. O relatório com cache não teve nenhum erro.
+- Os erros de `/dev/shm` no log da API são todos da rodada curta, anterior à correção.
+
+### 6.6 Rodada completa 2: resultados (2026-11-22, 02:42–07:35)
+
+132 execuções com pré-aquecimento, todas com saída gravada. Os pré-aquecimentos não tiveram nenhum erro. A variação entre repetições ficou pequena: na maioria das combinações, o mín–máx do throughput está a ~1–2% da média. Tabelas e gráficos estão em `docs/evidencias/carga/` (`resumo.md`, `resumo.csv`, `graficos/`). As variantes limitadas pelo Postgres repetiram a rodada 1 (LAZY a 10 VUs: 69,5 → 69,7 req/s), e as limitadas pela CPU da API subiram (produto sem cache a 200 VUs: 3.009 → 6.960). Isso confirma o diagnóstico da seção 6.5.
+
+Base para as respostas do item 6.7 (números da rodada 2):
+- **Maiores ganhos.** O cache do relatório: de 0,8 para ~6.000 req/s, e de 58–91% de erros para 0% a partir de 50 VUs. Depois, o índice em C3: de 99 para 5.810 req/s a 10 VUs, com p95 de 185 para 1,4 ms. Em C2, DTO e JOIN FETCH fazem ~9× e ~8,5× o throughput do LAZY (634,8 e 588,8 contra 69,7 req/s a 10 VUs), e EAGER ~2,9×.
+- **Ganhos sob carga.** Nas variantes limitadas pelo Postgres (LAZY, EAGER, JOIN FETCH, DTO, sem índice, relatório sem cache), o throughput já fica estável a 10 VUs e a latência média cresce linearmente com os VUs, como prevê a lei de Little (LAZY a 200 VUs: 200 / 69,4 = 2,88 s; medido: 2,95 s). As proporções se mantêm: DTO/LAZY dá 9,1× a 10 VUs e 9,0× a 200. O cache de produto ganha mais com carga: +21% a 10 VUs (8.493 → 10.304) e +44% a 200 (6.960 → 10.029), porque sem cache o throughput cai com os VUs e com cache quase não cai.
+- **Média × p95 × p99.** Nos endpoints rápidos, o throttling de CPU cria uma cauda (produto sem cache a 10 VUs: p95 de 0,9 ms e p99 de 39,8 ms). A partir de 50 VUs, o p95 salta para ~60–70 ms, perto do período de 100 ms da cota, enquanto a média fica em 5–14 ms. No relatório sem cache, o p99 chega a 60.000 ms (o timeout do k6). A 200 VUs, a mediana do tempo no servidor (`X-Elapsed-Ms`) de produto sem cache é 1,5 ms e a do cliente é 7,0 ms: a maior parte da espera acontece antes do controller (fila do Tomcat e CPU limitada).
+- **Abaixo do esperado.**
+  - O cache de produto a 10 VUs ganha só ~21%: a busca por PK já é barata e o gargalo é a CPU da API, gasta em HTTP e JSON, não o banco. O cache tira o Postgres de cena (CPU de 112% para 1%), mas não alivia a API.
+  - "Frio" × "quente" deu igual (HIT de 100% em ambos na coleta): os 20 mil ids enchem o cache em segundos no aquecimento a 10 mil req/s. A fase fria existe, mas dura menos que o aquecimento.
+  - EAGER continua N+1 (101 SQL/req).
+  - DTO fica só ~8% acima do JOIN FETCH em throughput, mas usa bem menos CPU da API (85% contra 136% a 10 VUs).
+  - Q2 amplo usou o índice, ao contrário do previsto (seção 5).
+- **Gargalos.** A CPU da API: limite de 2 CPUs com throttling em ~99% dos períodos, nas variantes rápidas. A CPU do Postgres: 200% em C2, em C3 sem índice e no relatório sem cache. O pool do Hikari no relatório sem cache (`total=10, active=10, waiting=168`; falha após 30 s).
+- **Menos consultas.** Reduzir de 387 para 101 e depois para 1 SQL/req levou o throughput de 69,7 para 200,9 e depois para 588,8 req/s. O ganho não é proporcional: 1 SQL com JOINs ainda satura o Postgres. Zerar as consultas com o cache muda o gargalo de lugar: do Postgres para a API.
+- **Custos e riscos.**
+  - Cache: dado desatualizado até o TTL ou a invalidação, memória do Redis, *cache stampede* (visto na rodada curta) e mais um componente para operar.
+  - Índices: +26 MB e UPDATE de status de 79 para 194 ms.
+  - DTO acopla a consulta à tela.
+  - JOIN FETCH com paginação pode paginar em memória (HHH90003004).
+- Não feito: testar com o pool do Hikari maior (seção 6.2, item opcional).
 
 ---
 
@@ -293,8 +325,11 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [x] Scripts k6 dos cenários C1–C3 (`k6/carga.js`; C4 opcional não feito)
 - [x] Runner que executa cargas × repetições e salva os JSON (`k6/rodar.sh`)
 - [x] Script de tabelas e gráficos (`analise/gerar_graficos.py`), validado na rodada curta
-- [ ] Rodada completa no Linux com o protocolo da seção 6.2 (~4 h; máquina livre)
-- [ ] Gerar tabelas e gráficos da rodada completa e copiar para `docs/`
+- [x] Rodada completa 1 (`completa`): diagnóstico de throttling e aquecimento da JVM, com as evidências em `docs/evidencias/carga-rodada1/` (seção 6.5)
+- [x] Pré-aquecimento a 10 VUs no runner, validado numa rodada mínima
+- [x] Rodada completa 2 (`completa2`) com pré-aquecimento (4h53; seção 6.6)
+- [x] Gerar tabelas e gráficos da rodada 2 em `docs/evidencias/carga/`
+- [ ] (Opcional) Relatório sem cache com o pool do Hikari maior (`DB_POOL_SIZE`)
 
 ### Fase 5 — Entrega
 - [ ] README.md (relatório nas 7 seções do item 7.2)
