@@ -156,16 +156,42 @@ FETCH, 151 milissegundos.")*
 
 ## 5:45–6:50 · Resultados e conclusões
 
-**Tela:** README, seção 5.5, passando pelos gráficos de C1, C2 e C3.
+**Tela:** README, seção 5.5. Role a página de cima para baixo: os quatro gráficos aparecem na
+ordem abaixo, cada um com o título no alto. Todos têm três painéis: latência p95 (esquerda),
+throughput (meio) e taxa de erros (direita). Em todos, o eixo horizontal é o número de usuários
+simultâneos (10, 50, 100 e 200).
 
-> Os principais resultados:
-> - **Maior ganho: o cache do relatório.** Sem cache, o banco conclui menos de 1 relatório por
->   segundo e, a partir de 50 usuários, mais da metade das requisições falha por falta de
->   conexão. Com cache, são cerca de 6 mil por segundo, sem erros.
-> - **O índice:** multiplicou por quase 60 o throughput da consulta por cliente.
-> - **Eliminar o N+1:** deu cerca de 9 vezes mais throughput.
-> - **Cache de produto:** ganhou só de 21% a 44%. A busca por chave primária já é barata, e o
->   gargalo é a CPU da própria API.
+**Gráfico 1 de 4: "C1 · Produto por id: sem cache × com cache"** (~10 s)
+*Aponte o painel do meio, Throughput: a linha azul (sem cache) fica abaixo das outras duas.*
+
+> Primeiro, o cache na busca de um produto. A linha azul, sem cache, fica entre 7 e 8,5 mil
+> requisições por segundo; com cache, cerca de 10 mil. O ganho é de só 21% a 44%: buscar por
+> chave primária já é barato, e o gargalo passa a ser a CPU da própria API.
+
+**Gráfico 2 de 4: "C1 · Relatório de vendas por categoria: sem cache × com cache"** (~15 s)
+*Aponte primeiro o painel da direita, Taxa de erros (a linha azul subindo), depois o do meio,
+Throughput (a linha azul colada no zero e a laranja perto de 6 mil).*
+
+> No relatório, o cache faz toda a diferença. Sem cache, à direita, os erros sobem para 58%,
+> 77% e 91% a partir de 50 usuários: as requisições esperam conexão com o banco e desistem. No
+> meio, sem cache o banco conclui menos de 1 relatório por segundo. Com cache, são cerca de 6
+> mil por segundo, sem nenhum erro. Foi o maior ganho do trabalho.
+
+**Gráfico 3 de 4: "C2 · 50 pedidos com cliente e itens, por estratégia de carregamento"** (~15 s)
+*Aponte o painel do meio, Throughput: quatro linhas retas, de baixo para cima LAZY, EAGER,
+JOIN FETCH e DTO.*
+
+> Agora as estratégias de consulta. No meio, de baixo para cima: LAZY, cerca de 70 requisições
+> por segundo; EAGER, 200; JOIN FETCH e DTO, perto de 600. Eliminar o N+1 deu cerca de 9 vezes
+> mais throughput. As linhas são retas porque o banco já está saturado: mais usuários só
+> aumentam a latência, à esquerda.
+
+**Gráfico 4 de 4: "C3 · Pedidos de um cliente (Q1): sem índice × com índice"** (~10 s)
+*Aponte o painel do meio, Throughput: a linha azul (sem índice) colada no zero e a laranja
+entre 5 e 6 mil.*
+
+> Por fim, o índice. Sem índice, a consulta dos pedidos de um cliente fica em 100 requisições
+> por segundo; com índice, quase 6 mil com 10 usuários, cerca de 60 vezes mais.
 
 **Tela:** seção 6 (Discussão) ou 5.3 (o quadro sobre o pré-aquecimento).
 
