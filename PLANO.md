@@ -333,7 +333,8 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 
 ### Fase 5 — Entrega
 - [x] README.md (relatório nas 7 seções do item 7.2), com os números conferidos contra `docs/evidencias/` e o SQL gerado pelo Hibernate em `docs/evidencias/consultas/sql-gerado/`
-- [ ] Roteiro e gravação do vídeo (≤ 7 min), postado 1 dia antes da apresentação
+- [x] Roteiro do vídeo: `docs/roteiro-video.md`, com as demonstrações em `analise/demo.sh` (blocos testados contra a API em container com o profile `demo`)
+- [ ] Gravar o vídeo (≤ 7 min) e postá-lo 1 dia antes da apresentação
 - [ ] Ensaiar a apresentação prática (itens do 7.3)
 
 ---

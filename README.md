@@ -947,6 +947,11 @@ SPRING_PROFILES_ACTIVE=sql ./mvnw spring-boot:run                # loga cada SQL
 | Item 3: carga (pare a API local antes) | `docker compose --profile carga up -d --build app` e depois `RODADA=minha ./k6/rodar.sh` | `k6/resultados/minha/` |
 | Item 3: tabelas e gráficos | `analise/.venv/bin/python analise/gerar_graficos.py k6/resultados/minha` | `k6/resultados/minha/relatorio/` |
 
+Para uma demonstração guiada de cada item (a mesma do vídeo), suba a API com
+`SPRING_PROFILES_ACTIVE=demo docker compose --profile carga up -d app` e use
+`./analise/demo.sh <bloco>`, com os blocos `aquecer`, `ambiente`, `api`, `cache`, `consultas`,
+`indices`, `carga` e `restaurar`. O roteiro está em [`docs/roteiro-video.md`](docs/roteiro-video.md).
+
 A rodada completa leva ~5 h. Para um teste rápido:
 
 ```bash

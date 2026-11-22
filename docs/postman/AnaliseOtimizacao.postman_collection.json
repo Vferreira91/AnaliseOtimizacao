@@ -1,0 +1,483 @@
+{
+  "info": {
+    "name": "AnaliseOtimizacao: demonstração",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Requisições do vídeo, na ordem de docs/roteiro-video.md. Veja os cabeçalhos X-Cache, X-SQL-Count e X-Elapsed-Ms na aba Headers da resposta, ou resumidos na aba Test Results. Antes de gravar: SPRING_PROFILES_ACTIVE=demo docker compose --profile carga up -d app e ./analise/demo.sh aquecer. Depois: ./analise/demo.sh restaurar."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "n",
+      "value": "10"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Resume os cabeçalhos de instrumentação na aba Test Results.",
+          "['X-Cache', 'X-SQL-Count', 'X-SQL-Ms', 'X-Elapsed-Ms'].forEach((nome) => {",
+          "  const valor = pm.response.headers.get(nome);",
+          "  if (valor !== undefined) pm.test(`${nome}: ${valor}`, () => {});",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. API",
+      "description": "",
+      "item": [
+        {
+          "name": "Produto 42 (sem cache)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produtos/42/sem-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "42",
+                "sem-cache"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos do cliente 5000",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clientes/5000/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "5000",
+                "pedidos"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Cache",
+      "description": "Profile demo: TTL de 20 s. O TTL aparece no terminal: docker exec ao-redis redis-cli TTL produtos::42",
+      "item": [
+        {
+          "name": "Esvaziar o cache",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "cache"
+              ]
+            },
+            "description": "Estado inicial controlado: cache vazio."
+          }
+        },
+        {
+          "name": "Produto 42 com cache (envie 2 vezes: MISS, depois HIT)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produtos/42/com-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "42",
+                "com-cache"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Alterar o produto 42 (invalida o cache)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produtos/42",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "42"
+              ]
+            },
+            "description": "Grava no banco e remove a chave produtos::42 do Redis depois do commit. Confira no terminal: docker exec ao-redis redis-cli EXISTS produtos::42",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preco\": 299.9,\n  \"estoque\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Produto 42 com cache (MISS com o preço novo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produtos/42/com-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "42",
+                "com-cache"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Relatório com cache (envie 2 vezes: ~1 s, depois ~1 ms)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/relatorios/vendas-por-categoria/com-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "relatorios",
+                "vendas-por-categoria",
+                "com-cache"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Relatório sem cache",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/relatorios/vendas-por-categoria/sem-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "relatorios",
+                "vendas-por-categoria",
+                "sem-cache"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Devolver o produto 42 ao preço original",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produtos/42",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "42"
+              ]
+            },
+            "description": "Restaura preço e estoque. A data de atualização original volta com ./analise/demo.sh restaurar.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preco\": 244.88,\n  \"estoque\": 200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Consultas (mesmo JSON, n = {{n}})",
+      "description": "Compare X-SQL-Count: LAZY 76, EAGER 21, batch 4, as demais 1 (com n = 10).",
+      "item": [
+        {
+          "name": "Pedidos: lazy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/lazy?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "lazy"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: eager",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/eager?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "eager"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: join-fetch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/join-fetch?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "join-fetch"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: entity-graph",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/entity-graph?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "entity-graph"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/batch?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "batch"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: dto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/dto?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "dto"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pedidos: nativo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/nativo?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "nativo"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Armadilha: JOIN FETCH + paginação em memória (~6 s)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/join-fetch-paginacao-memoria?n={{n}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "join-fetch-paginacao-memoria"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "{{n}}"
+                }
+              ]
+            },
+            "description": "O SQL sai sem LIMIT: o banco devolve todos os pedidos e o Hibernate corta em memória (HHH90003004)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Índice",
+      "description": "",
+      "item": [
+        {
+          "name": "Pedidos do cliente 5000 (Q1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clientes/5000/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "5000",
+                "pedidos"
+              ]
+            },
+            "description": "Envie depois de remover e depois de recriar o índice no terminal (./analise/demo.sh indices) e compare X-Elapsed-Ms."
+          }
+        }
+      ]
+    }
+  ]
+}
