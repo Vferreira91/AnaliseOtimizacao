@@ -1,12 +1,44 @@
 # Infraestrutura dos experimentos.
 # Os limites de CPU/memória mantêm o ambiente equivalente entre execuções (item 6.5).
-# Durante o desenvolvimento a aplicação roda fora do Docker (cd app && ./mvnw spring-boot:run).
-# Ela entra aqui como serviço, com limites próprios, na Fase 4 (testes de carga).
+#
+#   docker compose up -d                       -> Postgres + Redis (desenvolvimento; a API roda
+#                                                 fora do Docker com ./mvnw spring-boot:run)
+#   docker compose --profile carga up -d app   -> também a API em container, com limites fixos,
+#                                                 para os testes de carga (Fase 4)
 
 services:
+  app:
+    profiles: ["carga"]
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: ao-app:latest
+    container_name: ao-app
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/pedidos
+      REDIS_HOST: redis
+      # Tamanho do pool do Hikari; o runner pode variar (ex.: DB_POOL_SIZE=50).
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1g
+
   postgres:
     image: postgres:16-alpine
     container_name: ao-postgres
+    # O padrão do Docker (64 MB de /dev/shm) estoura com consultas paralelas concorrentes
+    # ("could not resize shared memory segment"): os hash joins paralelos usam memória
+    # compartilhada dinâmica. Visto na rodada curta da Fase 4 com o relatório sem cache.
+    shm_size: 1g
     environment:
       POSTGRES_DB: pedidos
       POSTGRES_USER: app

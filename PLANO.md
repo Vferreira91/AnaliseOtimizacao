@@ -183,6 +183,24 @@ Observado na rodada de 2026-11-21 (planos em `docs/evidencias/explain/`), com di
 k6 (handleSummary → JSON)  →  analise/gerar_graficos.py  →  docs/graficos/*.png  →  README.md
 ```
 
+### 6.4 Implementação (2026-11-21)
+
+- **API em container** (`app/Dockerfile`, serviço `app` no profile `carga` do compose): 2 CPUs / 1 GB, `-XX:MaxRAMPercentage=75`, pool via `DB_POOL_SIZE` (padrão 10).
+- **`k6/carga.js`**: uma variante por execução; cenários `aquecimento` e `coleta` com o mesmo nº de VUs, sem pausa entre requisições (closed model). Métricas só da coleta (tag `scenario:coleta`); throughput = requisições da coleta ÷ duração da coleta. Também registra % de HIT (`X-Cache`), SQL/req (`X-SQL-Count`) e tempo no servidor (`X-Elapsed-Ms`).
+- **`k6/rodar.sh`**: variantes × cargas × repetições (cada repetição é uma varredura completa). Antes de cada execução: ajusta os índices (só a variante C3 "sem-indice" roda sem eles), reinicia o container da API, limpa o cache (e pré-carrega os 100 produtos na variante "quente") e amostra `docker stats`. Saída em `k6/resultados/<rodada>/` (ignorada pelo Git).
+- **`analise/gerar_graficos.py`** (venv em `analise/.venv`, `requirements.txt`): agrega as repetições e gera `resumo.csv`, `resumo.md` e um painel por cenário (p95 em escala log, throughput, erros).
+- C2 usa n = 50 e roda **com** os índices (cenário realista); C1 também.
+
+**Rodada curta de validação** (10 e 100 VUs, 5 s + 10 s, 1 repetição) revelou e corrigiu:
+- `/dev/shm` de 64 MB do Docker estourava com consultas paralelas concorrentes do relatório (`could not resize shared memory segment`, 99% de erros): `shm_size: 1g` no Postgres.
+- O runner sobrescrevia o nome do arquivo de resultado na variante "quente" (variável `id` reaproveitada).
+- URLs com ids aleatórios geravam >100 mil séries no k6: agrupadas pela tag `name`.
+
+Observações a confirmar na rodada completa (não são resultados finais):
+- Produto: a API fica perto do limite de 2 CPUs (~160% de CPU) e o Postgres folgado, ou seja, o gargalo é a aplicação. O p95 de ~65 ms com 10 VUs, contra uma mediana de ~2–5 ms, sugere *throttling* de CPU do container (cota em janelas de 100 ms); falta verificar (`cpu.stat` do cgroup).
+- Relatório sem cache: o Postgres satura as 2 CPUs; com 100 VUs o pool de 10 conexões esgota e as requisições falham após 30 s (`Connection is not available`).
+- Relatório com cache numa coleta curta: todos os VUs dão MISS ao mesmo tempo no início e repetem a consulta pesada (*cache stampede*), e o cache não chega a ajudar em 10 s.
+
 ---
 
 ## 7. Estrutura do repositório
@@ -271,11 +289,12 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [x] Medição por requisição de sem cache / MISS / HIT: `docs/evidencias/cache/resumo.md`
 
 ### Fase 4 — Item 3 (carga)
-- [ ] Serviço da aplicação no `docker-compose.yml` (Dockerfile + limites de CPU/memória, decisão D6)
-- [ ] Scripts k6 dos cenários C1–C3 (+ C4 opcional)
-- [ ] Runner que executa cargas × repetições e salva os JSON
-- [ ] Rodada completa no Linux com o protocolo da seção 6.2
-- [ ] Gerar tabelas e gráficos
+- [x] Serviço da aplicação no `docker-compose.yml` (Dockerfile + limites de CPU/memória, decisão D6)
+- [x] Scripts k6 dos cenários C1–C3 (`k6/carga.js`; C4 opcional não feito)
+- [x] Runner que executa cargas × repetições e salva os JSON (`k6/rodar.sh`)
+- [x] Script de tabelas e gráficos (`analise/gerar_graficos.py`), validado na rodada curta
+- [ ] Rodada completa no Linux com o protocolo da seção 6.2 (~4 h; máquina livre)
+- [ ] Gerar tabelas e gráficos da rodada completa e copiar para `docs/`
 
 ### Fase 5 — Entrega
 - [ ] README.md (relatório nas 7 seções do item 7.2)

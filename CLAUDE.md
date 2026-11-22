@@ -20,7 +20,7 @@ O `README.md` será o **relatório técnico final** (entregável), com as 7 seç
 - Fase 1 concluída: Spring Boot 3.5.16 em `app/` (pacote `br.edu.aos.pedidos`), migration `db/migration/V1__schema.sql`, seed `db/seed/popular.sh` e contador de SQL (`config/ContadorSql*`, `MetricasRequisicaoFilter`). Entidades por enquanto: `Categoria`, `Produto`, `Cliente`; endpoint de exemplo `GET /api/clientes/{id}`.
 - Fase 2 concluída: famílias de entidades em `domain/consulta/`, endpoints `/api/pedidos/*` (JSON idêntico verificado), `GET /api/clientes/{id}/pedidos`, índices (`db/indices/`), EXPLAIN (`db/explain/executar.sh`) e medições (`analise/experimento_consultas.sh` → `docs/evidencias/`). Os índices de experimento estão **criados** no banco ao final do roteiro.
 - Fase 3 concluída: cache-aside no Redis (`config/CacheConfig`, `ProdutoService`, `RelatorioService`), endpoints `/api/produtos/{id}/{sem,com}-cache`, `PUT /api/produtos/{id}`, `/api/relatorios/vendas-por-categoria/{sem,com}-cache`, `PUT /api/pedidos/{id}/status`, `DELETE /api/admin/cache`. Experimento 3.4 em `analise/experimento_cache.sh` (exige `SPRING_PROFILES_ACTIVE=demo`; restaura os dados ao final) e medição em `analise/medir_cache.sh`.
-- **Próximo passo: Fase 4** (carga): app no docker-compose com limites, scripts k6 C1–C3, runner, rodada completa e gráficos.
+- Fase 4 em andamento: API em container (`docker compose --profile carga up -d app`, porta 8080), `k6/carga.js`, `k6/rodar.sh` e `analise/gerar_graficos.py` prontos e validados numa rodada curta. **Falta a rodada completa** (~4 h, máquina livre) e copiar tabelas/gráficos para `docs/`.
 - Ambiente de desenvolvimento e de medição: **Linux (Zorin OS, base Ubuntu)**, com Docker nativo.
 
 ## Stack e convenções
@@ -44,7 +44,12 @@ cd app && ./mvnw spring-boot:run                       # sobe a API em :8080 (o 
 SPRING_PROFILES_ACTIVE=sql ./mvnw spring-boot:run      # idem, logando cada SQL do Hibernate
 ./db/seed/popular.sh                                   # popula o banco (N_PEDIDOS=... etc. ajustam o volume)
 docker exec -i ao-postgres psql -U app -d pedidos < db/seed/conferir.sql   # só a conferência
+docker compose --profile carga up -d --build app       # API em container (2 CPUs / 1 GB) para os testes de carga
+./k6/rodar.sh                                          # rodada completa (RODADA, CARGAS, REPETICOES... ajustáveis)
+analise/.venv/bin/python analise/gerar_graficos.py k6/resultados/<rodada>   # tabelas + gráficos
 ```
+
+A API em container e a API local (`./mvnw spring-boot:run`) usam a mesma porta 8080: pare uma antes de subir a outra.
 
 ## Cuidados
 

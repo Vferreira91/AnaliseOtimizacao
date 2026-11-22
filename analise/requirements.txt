@@ -1,0 +1,3 @@
+# Ambiente dos scripts de análise (gráficos dos testes de carga).
+#   python3 -m venv analise/.venv && analise/.venv/bin/pip install -r analise/requirements.txt
+matplotlib==3.11.2

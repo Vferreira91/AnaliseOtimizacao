@@ -1,0 +1,8 @@
+# Contexto de build da imagem da API (raiz do repositório): só app/ e db/ interessam.
+.git
+**/target
+k6/resultados
+docs
+analise
+**/.venv
+**/__pycache__
