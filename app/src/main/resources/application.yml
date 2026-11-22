@@ -42,6 +42,25 @@ management:
       exposure:
         include: health,info,metrics
 
+app:
+  cache:
+    # Produto: preço/estoque mudam, mas o PUT invalida a entrada; o TTL só limita o pior caso.
+    produtos: 10m
+    # Relatório: caro e tolerante a atraso; não há invalidação, só expiração.
+    relatorio-vendas: 60s
+
+---
+# TTLs curtos para demonstrar a expiração ao vivo (experimento 3.4).
+# Uso: SPRING_PROFILES_ACTIVE=demo
+spring:
+  config:
+    activate:
+      on-profile: demo
+app:
+  cache:
+    produtos: 20s
+    relatorio-vendas: 20s
+
 ---
 # Mostra cada SQL gerado pelo Hibernate no log (útil nas demonstrações de N+1).
 # Uso: SPRING_PROFILES_ACTIVE=sql

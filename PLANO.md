@@ -94,6 +94,14 @@ Cabeçalhos em toda resposta: `X-Cache: HIT|MISS|BYPASS`, `X-SQL-Count: n`, `X-E
 
 Evidências: sequência de requisições (Postman/curl), `redis-cli MONITOR`, logs SQL.
 
+### 4.4 Implementação e resultados (2026-11-21)
+
+- Cache-aside programático (`ProdutoService`, `RelatorioService`) em vez de `@Cacheable`, para a resposta saber se foi HIT ou MISS. O `RedisCacheManager` é *transaction-aware*: o evict do `PUT` só acontece depois do commit. Valores em JSON legível no Redis.
+- Para o item 6 do experimento (relatório defasado) foi criada a escrita `PUT /api/pedidos/{id}/status`: cancelar um pedido muda o faturamento.
+- `analise/experimento_cache.sh` roda o experimento 3.4 completo (profile `demo`, TTL 20 s), grava `docs/evidencias/cache/experimento-3.4.md` e `redis-monitor.txt` e restaura o produto e o pedido no final.
+- `analise/medir_cache.sh` mede cada situação, um cliente por vez: `docs/evidencias/cache/resumo.md`. Mediana no servidor: produto sem cache 2,58 ms, MISS 2,82 ms, HIT 1,32 ms; relatório sem cache 1005 ms, MISS 1000 ms, HIT 1,23 ms.
+- Diferença em relação ao esperado: mesmo a busca por PK ficou ~2× mais rápida com HIT (sem concorrência). O ganho absoluto é ~1,3 ms. Os testes de carga (Fase 4) vão mostrar se isso se mantém sob concorrência.
+
 ---
 
 ## 5. Item 2 — Otimização de consultas
@@ -257,9 +265,10 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [x] Medição do custo dos índices (insert, update, tamanho e tempo de criação): `docs/evidencias/indices/`
 
 ### Fase 3 — Item 1 (cache)
-- [ ] Configuração Redis + TTL por cache + profile `demo`
-- [ ] Endpoints com/sem cache, `PUT` com invalidação, limpeza de cache
-- [ ] Executar e documentar o experimento obrigatório (3.4)
+- [x] Configuração Redis + TTL por cache + profile `demo` (`config/CacheConfig`, `app.cache.*`)
+- [x] Endpoints com/sem cache, `PUT` com invalidação, limpeza de cache (+ `PUT /api/pedidos/{id}/status`)
+- [x] Executar e documentar o experimento obrigatório (3.4): `docs/evidencias/cache/experimento-3.4.md`
+- [x] Medição por requisição de sem cache / MISS / HIT: `docs/evidencias/cache/resumo.md`
 
 ### Fase 4 — Item 3 (carga)
 - [ ] Serviço da aplicação no `docker-compose.yml` (Dockerfile + limites de CPU/memória, decisão D6)

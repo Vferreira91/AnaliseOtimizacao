@@ -2,6 +2,7 @@ package br.edu.aos.pedidos.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,6 +39,15 @@ public class Produto {
     private LocalDateTime atualizadoEm;
 
     protected Produto() {
+    }
+
+    /** Altera preço e estoque; o Hibernate grava no commit (dirty checking). */
+    public void atualizar(BigDecimal novoPreco, Integer novoEstoque) {
+        this.preco = novoPreco;
+        this.estoque = novoEstoque;
+        // O TIMESTAMP do Postgres guarda microssegundos; truncar mantém a resposta do PUT igual
+        // ao que uma leitura posterior devolve.
+        this.atualizadoEm = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
     }
 
     public Long getId() {
