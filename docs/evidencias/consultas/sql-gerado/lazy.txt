@@ -1,0 +1,172 @@
+# GET /api/pedidos/lazy?n=2  (X-SQL-Count: 13)
+# Log do Hibernate (profile sql): cada bloco 'org.hibernate.SQL' é um comando enviado ao banco.
+
+2026-11-22T13:37:16.328Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        pl1_0.id,
+        pl1_0.cliente_id,
+        pl1_0.data_pedido,
+        pl1_0.status,
+        pl1_0.valor_total 
+    from
+        pedido pl1_0 
+    order by
+        pl1_0.id desc 
+    fetch
+        first ? rows only
+2026-11-22T13:37:16.329Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] o.h.stat.internal.StatisticsImpl         : HHH000117: HQL: select p from PedidoLazy p order by p.id desc, time: 0ms, rows: 2
+2026-11-22T13:37:16.329Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        i1_0.pedido_id,
+        i1_0.id,
+        i1_0.preco_unitario,
+        i1_0.produto_id,
+        i1_0.quantidade 
+    from
+        item_pedido i1_0 
+    where
+        i1_0.pedido_id=?
+2026-11-22T13:37:16.330Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.331Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.332Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.333Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        c1_0.id,
+        c1_0.cidade,
+        c1_0.criado_em,
+        c1_0.email,
+        c1_0.nome,
+        c1_0.uf 
+    from
+        cliente c1_0 
+    where
+        c1_0.id=?
+2026-11-22T13:37:16.334Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        i1_0.pedido_id,
+        i1_0.id,
+        i1_0.preco_unitario,
+        i1_0.produto_id,
+        i1_0.quantidade 
+    from
+        item_pedido i1_0 
+    where
+        i1_0.pedido_id=?
+2026-11-22T13:37:16.335Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.335Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.336Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.337Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.337Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco 
+    from
+        produto p1_0 
+    where
+        p1_0.id=?
+2026-11-22T13:37:16.338Z DEBUG 1 --- [pedidos] [nio-8080-exec-4] org.hibernate.SQL                        : 
+    select
+        c1_0.id,
+        c1_0.cidade,
+        c1_0.criado_em,
+        c1_0.email,
+        c1_0.nome,
+        c1_0.uf 
+    from
+        cliente c1_0 
+    where
+        c1_0.id=?
+2026-11-22T13:37:16.339Z  INFO 1 --- [pedidos] [nio-8080-exec-4] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    314145 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    454751 nanoseconds spent preparing 13 JDBC statements;
+    3084258 nanoseconds spent executing 13 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    0 nanoseconds spent performing 0 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    0 nanoseconds spent performing 0 L2C misses;
+    0 nanoseconds spent executing 0 flushes (flushing a total of 0 entities and 0 collections);
+    4138 nanoseconds spent executing 1 pre-partial-flushes;
+    1724 nanoseconds spent executing 1 partial-flushes (flushing a total of 0 entities and 0 collections)
+}

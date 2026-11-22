@@ -1,0 +1,61 @@
+# GET /api/pedidos/join-fetch?n=2  (X-SQL-Count: 1)
+# Log do Hibernate (profile sql): cada bloco 'org.hibernate.SQL' é um comando enviado ao banco.
+
+2026-11-22T13:37:18.540Z DEBUG 1 --- [pedidos] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        pl1_0.id,
+        c1_0.id,
+        c1_0.cidade,
+        c1_0.criado_em,
+        c1_0.email,
+        c1_0.nome,
+        c1_0.uf,
+        pl1_0.data_pedido,
+        i1_0.pedido_id,
+        i1_0.id,
+        i1_0.preco_unitario,
+        p1_0.id,
+        p1_0.atualizado_em,
+        p1_0.categoria_id,
+        p1_0.estoque,
+        p1_0.nome,
+        p1_0.preco,
+        i1_0.quantidade,
+        pl1_0.status,
+        pl1_0.valor_total 
+    from
+        pedido pl1_0 
+    join
+        cliente c1_0 
+            on c1_0.id=pl1_0.cliente_id 
+    left join
+        item_pedido i1_0 
+            on pl1_0.id=i1_0.pedido_id 
+    left join
+        produto p1_0 
+            on p1_0.id=i1_0.produto_id 
+    where
+        pl1_0.id in (select
+            pl2_0.id 
+        from
+            pedido pl2_0 
+        order by
+            pl2_0.id desc 
+        fetch
+            first ? rows only) 
+    order by
+        pl1_0.id desc
+2026-11-22T13:37:18.546Z DEBUG 1 --- [pedidos] [nio-8080-exec-8] o.h.stat.internal.StatisticsImpl         : HHH000117: HQL: select p from PedidoLazy p join fetch p.cliente left join fetch p.itens i left join fetch i.produto where p.id in (select p2.id from PedidoLazy p2 order by p2.id desc limit :n) order by p.id desc, time: 2ms, rows: 2
+2026-11-22T13:37:18.547Z  INFO 1 --- [pedidos] [nio-8080-exec-8] i.StatisticalLoggingSessionEventListener : Session Metrics {
+    348872 nanoseconds spent acquiring 1 JDBC connections;
+    0 nanoseconds spent releasing 0 JDBC connections;
+    325507 nanoseconds spent preparing 1 JDBC statements;
+    2403979 nanoseconds spent executing 1 JDBC statements;
+    0 nanoseconds spent executing 0 JDBC batches;
+    0 nanoseconds spent performing 0 L2C puts;
+    0 nanoseconds spent performing 0 L2C hits;
+    0 nanoseconds spent performing 0 L2C misses;
+    0 nanoseconds spent executing 0 flushes (flushing a total of 0 entities and 0 collections);
+    5260 nanoseconds spent executing 1 pre-partial-flushes;
+    2665 nanoseconds spent executing 1 partial-flushes (flushing a total of 0 entities and 0 collections)
+}
