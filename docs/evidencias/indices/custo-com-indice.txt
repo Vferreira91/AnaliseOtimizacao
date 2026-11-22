@@ -1,0 +1,30 @@
+== Índices existentes e tamanho ==
+   tabela    |         indice          | tamanho 
+-------------+-------------------------+---------
+ item_pedido | idx_item_pedido_pedido  | 12 MB
+ item_pedido | item_pedido_pkey        | 34 MB
+ pedido      | idx_pedido_cliente_data | 6184 kB
+ pedido      | idx_pedido_status_data  | 7632 kB
+ pedido      | pedido_pkey             | 7032 kB
+
+== Tamanho total (tabela + índices) ==
+   tabela    | tabela_tam | indices_tam 
+-------------+------------+-------------
+ item_pedido | 72 MB      | 46 MB
+ pedido      | 14 MB      | 20 MB
+
+== Escrita: 50.000 pedidos + 250.000 itens (desfeito com ROLLBACK) ==
+Timing is on.
+BEGIN
+Time: 0.065 ms
+INSERT 0 50000
+Time: 1250.060 ms (00:01.250)
+INSERT 0 250000
+Time: 10199.917 ms (00:10.200)
+UPDATE 20000
+Time: 194.224 ms
+ROLLBACK
+Time: 0.195 ms
+Timing is off.
+VACUUM
+VACUUM

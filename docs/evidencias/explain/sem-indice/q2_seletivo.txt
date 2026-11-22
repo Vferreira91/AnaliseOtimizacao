@@ -1,0 +1,20 @@
+                                                                                                  QUERY PLAN                                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Merge  (cost=4808.87..4827.73 rows=164 width=31) (actual time=8.501..11.180 rows=225 loops=1)
+   Workers Planned: 1
+   Workers Launched: 1
+   Buffers: shared hit=1780
+   ->  Sort  (cost=3808.86..3809.27 rows=164 width=31) (actual time=6.059..6.064 rows=112 loops=2)
+         Sort Key: data_pedido
+         Sort Method: quicksort  Memory: 33kB
+         Buffers: shared hit=1780
+         Worker 0:  Sort Method: quicksort  Memory: 29kB
+         ->  Parallel Seq Scan on pedido  (cost=0.00..3802.82 rows=164 width=31) (actual time=0.527..5.901 rows=112 loops=2)
+               Filter: ((data_pedido >= '2026-09-01 00:00:00'::timestamp without time zone) AND (data_pedido <= '2026-10-01 00:00:00'::timestamp without time zone) AND ((status)::text = 'CANCELADO'::text))
+               Rows Removed by Filter: 99888
+               Buffers: shared hit=1744
+ Planning:
+   Buffers: shared hit=98
+ Planning Time: 0.602 ms
+ Execution Time: 11.270 ms
+(17 rows)

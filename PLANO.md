@@ -105,17 +105,25 @@ Evidências: sequência de requisições (Postman/curl), `redis-cli MONITOR`, lo
 - `PedidoLazy` → `@OneToMany(fetch = LAZY)` para itens, `@ManyToOne(fetch = LAZY)` para cliente/produto
 - `PedidoEager` → as mesmas associações com `fetch = EAGER`
 
-Todos os endpoints retornam **o mesmo JSON** (os `n` pedidos mais recentes com cliente, itens e produto) para que a comparação seja justa.
+Todos os endpoints retornam **o mesmo JSON** (os `n` pedidos mais recentes com cliente, itens e produto) para que a comparação seja justa. Isso foi verificado: o hash do JSON é idêntico nas 8 variantes para n = 1, 100 e 1000.
+
+Decisões de implementação:
+- `FetchType` e `@BatchSize` são fixos no mapeamento, então há três famílias de entidades somente leitura (`@Immutable`) sobre as mesmas tabelas, em `domain/consulta/`: `PedidoLazy`/`ItemPedidoLazy`, `PedidoEager`/`ItemPedidoEager` e `PedidoBatch`/`ItemPedidoBatch`/`ClienteBatch`/`ProdutoBatch`. Numa ManyToOne, o `@BatchSize` vai na classe alvo; se ficasse em `Cliente`/`Produto`, o endpoint lazy perderia o N+1.
+- "Mais recentes" = `ORDER BY id DESC` (o seed insere em ordem de data, e a PK indexa o id). O custo de achar os N pedidos é igual e pequeno em todas as estratégias, isolando o carregamento das associações.
+- JOIN FETCH, EntityGraph e DTO limitam os pedidos numa subconsulta (`WHERE p.id IN (... LIMIT :n)`), o que dá 1 SQL. Com `setMaxResults` + fetch de coleção, o Hibernate pagina em memória (HHH90003004); isso fica demonstrado no endpoint `join-fetch-paginacao-memoria`.
+- O mapeamento para o JSON acontece dentro da transação (`open-in-view: false`) e ordena os itens por id em Java.
+- `default_batch_fetch_size` global **não** é usado: ele esconderia o N+1 de todos os endpoints.
 
 | Endpoint | Estratégia | Comportamento esperado |
 |---|---|---|
 | `GET /api/pedidos/lazy?n=` | LAZY | 1 + N + N·M queries (N+1 clássico) |
-| `GET /api/pedidos/eager?n=` | EAGER | Também N+1 com `findAll`/JPQL simples (selects secundários). É o alerta do enunciado de que EAGER não garante uma única consulta. |
-| `GET /api/pedidos/join-fetch?n=` | JPQL `JOIN FETCH` | 1 query; discutir produto cartesiano e paginação em memória (HHH90003004) |
+| `GET /api/pedidos/eager?n=` | EAGER | Também N+1 com JPQL simples (selects secundários). É o alerta do enunciado de que EAGER não garante uma única consulta. |
+| `GET /api/pedidos/join-fetch?n=` | JPQL `JOIN FETCH` | 1 query; discutir produto cartesiano |
+| `GET /api/pedidos/join-fetch-paginacao-memoria?n=` | JOIN FETCH + `Limit` (armadilha) | 1 query sem LIMIT: traz a tabela inteira e corta em memória |
 | `GET /api/pedidos/entity-graph?n=` | `@EntityGraph` | Equivalente declarativo ao JOIN FETCH |
-| `GET /api/pedidos/batch?n=` | `@BatchSize` / `default_batch_fetch_size` | 1 + ⌈N/lote⌉ queries |
+| `GET /api/pedidos/batch?n=` | `@BatchSize(100)` | 1 + ⌈N/lote⌉ queries por associação |
 | `GET /api/pedidos/dto?n=` | Projeção para DTO (JPQL) | 1 query enxuta, sem entidades gerenciadas |
-| `GET /api/pedidos/nativo?n=` | SQL nativo | Comparar com DTO; discutir manutenção e portabilidade |
+| `GET /api/pedidos/nativo?n=` | SQL nativo (JdbcTemplate) | Comparar com DTO; discutir manutenção e portabilidade |
 
 Medições para `n = 10, 100, 1000`: nº de SQL (`X-SQL-Count`, Hibernate Statistics), tempo, tamanho da resposta/linhas trazidas, ocorrência de N+1.
 
@@ -128,7 +136,14 @@ Medições para `n = 10, 100, 1000`: nº de SQL (`X-SQL-Count`, Hibernate Statis
 | Q3: JOIN `item_pedido` ↔ `pedido` por `pedido_id` | `(pedido_id)` | Impacto de FK sem índice nos joins (e nos endpoints LAZY) |
 
 - Scripts `db/indices/criar.sql` e `db/indices/remover.sql`; sempre rodar `ANALYZE` depois.
-- Evidências: `EXPLAIN (ANALYZE, BUFFERS)` antes/depois, salvos em `docs/evidencias/explain/`.
+- Evidências: `EXPLAIN (ANALYZE, BUFFERS)` antes/depois, salvos em `docs/evidencias/explain/` por `db/explain/executar.sh <rotulo>` (6 execuções, a 1ª descartada; mediana em `resumo.tsv`).
+- Roteiro completo e reprodutível: `analise/experimento_consultas.sh` (EXPLAIN + endpoints + custo, sem e com índice).
+
+Observado na rodada de 2026-11-21 (planos em `docs/evidencias/explain/`), com diferenças em relação ao esperado:
+- **Q1**: com índice o planner escolheu **Bitmap Index Scan + Sort**, e não o Index Scan já ordenado que estava previsto. Mesmo assim caiu de 10,4 ms para 0,23 ms (cliente típico) e de 9,9 ms para 2,6 ms (cliente 1, com 1.971 pedidos).
+- **Q2 amplo** (ENTREGUE em 2 anos): o índice **foi usado** (Index Scan, sem Sort), contra a expectativa, porque a ordem do índice (status, data_pedido) atende ao `ORDER BY data_pedido`. Caiu de 60,8 ms para 38,0 ms. Q2 seletivo: de 11,3 ms para 0,55 ms (Bitmap).
+- **Q3**: os itens de um pedido caíram de 28,4 ms (Seq Scan paralelo) para 0,13 ms; o JOIN dos 100 pedidos recentes, de 138 ms para 4,9 ms. É isso que derruba o lazy/eager com n = 1000 de ~50 s para ~1 s / ~0,4 s.
+- Custo dos 3 índices: +12 MB em `item_pedido` e +14 MB em `pedido`; criação em 0,6 s no total. INSERT quase não mudou; UPDATE de `status` em 20 mil pedidos foi de 79 ms para 194 ms (a coluna indexada impede o HOT update).
 - Custo dos índices: tempo de `INSERT` em massa e tamanho em disco (`pg_relation_size`) com e sem eles.
 - Endpoint `GET /api/clientes/{id}/pedidos` para levar Q1 ao teste de carga.
 
@@ -235,11 +250,11 @@ No Windows (se alguém do grupo desenvolver lá): Docker Desktop, JDK 21 (`winge
 - [x] Contador de SQL por requisição (proxy JDBC `datasource-proxy`) + cabeçalhos `X-SQL-Count` / `X-SQL-Ms` / `X-Elapsed-Ms`, inclusive em respostas de erro
 
 ### Fase 2 — Item 2 (consultas)
-- [ ] Entidades `PedidoLazy` / `PedidoEager` + DTOs de resposta
-- [ ] Endpoints lazy, eager, join-fetch, entity-graph, batch, dto, nativo
-- [ ] Tabela de nº de queries e tempo para n = 10/100/1000
-- [ ] Scripts de índices + `EXPLAIN ANALYZE` antes/depois (Q1, Q2, Q3)
-- [ ] Medição do custo dos índices (insert e tamanho)
+- [x] Entidades `PedidoLazy` / `PedidoEager` (+ família Batch) + DTOs de resposta
+- [x] Endpoints lazy, eager, join-fetch, entity-graph, batch, dto, nativo (+ `join-fetch-paginacao-memoria` e `GET /api/clientes/{id}/pedidos`)
+- [x] Tabela de nº de queries e tempo para n = 10/100/1000, sem e com índice: `docs/evidencias/consultas/resumo.md`
+- [x] Scripts de índices + `EXPLAIN ANALYZE` antes/depois (Q1, Q2, Q3): `db/indices/`, `db/explain/`, `docs/evidencias/explain/`
+- [x] Medição do custo dos índices (insert, update, tamanho e tempo de criação): `docs/evidencias/indices/`
 
 ### Fase 3 — Item 1 (cache)
 - [ ] Configuração Redis + TTL por cache + profile `demo`

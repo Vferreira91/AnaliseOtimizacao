@@ -1,0 +1,10 @@
+                                                                                             QUERY PLAN                                                                                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_pedido_status_data on pedido  (cost=0.42..10539.45 rows=93104 width=31) (actual time=0.047..35.892 rows=93099 loops=1)
+   Index Cond: (((status)::text = 'ENTREGUE'::text) AND (data_pedido >= '2024-11-01 00:00:00'::timestamp without time zone) AND (data_pedido <= '2026-11-01 00:00:00'::timestamp without time zone))
+   Buffers: shared hit=93429
+ Planning:
+   Buffers: shared hit=147
+ Planning Time: 0.862 ms
+ Execution Time: 38.691 ms
+(7 rows)

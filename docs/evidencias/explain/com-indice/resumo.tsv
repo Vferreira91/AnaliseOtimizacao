@@ -1,0 +1,9 @@
+# rotulo=com-indice data=2026-11-21T21:22:43-03:00 repeticoes=6 (a 1ª é aquecimento)
+indices: idx_item_pedido_pedido, idx_pedido_cliente_data, idx_pedido_status_data
+caso	mediana_ms	execucoes_ms
+q1_cliente_tipico	0.231	0.225 0.232 0.222 0.239 0.231
+q1_cliente_pesado	2.592	2.583 3.044 2.592 2.971 2.481
+q2_seletivo	0.545	0.534 0.554 0.534 0.551 0.545
+q2_amplo	37.980	38.378 37.980 37.711 37.934 38.691
+q3a_itens_do_pedido	0.132	0.133 0.132 0.124 0.135 0.132
+q3b_join_recentes	4.891	4.869 4.997 4.975 4.865 4.891

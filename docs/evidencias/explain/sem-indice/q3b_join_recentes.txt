@@ -1,0 +1,40 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=25000.93..25002.65 rows=690 width=103) (actual time=136.201..136.222 rows=516 loops=1)
+   Sort Key: p.id DESC, i.id
+   Sort Method: quicksort  Memory: 98kB
+   Buffers: shared hit=11120
+   ->  Nested Loop  (cost=9.93..24968.39 rows=690 width=103) (actual time=134.490..135.886 rows=516 loops=1)
+         Buffers: shared hit=11117
+         ->  Nested Loop  (cost=9.65..24757.31 rows=690 width=90) (actual time=134.471..135.045 rows=516 loops=1)
+               Buffers: shared hit=9569
+               ->  Hash Join  (cost=9.35..24302.10 rows=690 width=65) (actual time=134.418..134.583 rows=516 loops=1)
+                     Hash Cond: (i.pedido_id = p.id)
+                     Buffers: shared hit=9269
+                     ->  Seq Scan on item_pedido i  (cost=0.00..20161.98 rows=1099698 width=34) (actual time=0.003..57.648 rows=1099698 loops=1)
+                           Buffers: shared hit=9165
+                     ->  Hash  (cost=8.10..8.10 rows=100 width=39) (actual time=0.274..0.275 rows=100 loops=1)
+                           Buckets: 1024  Batches: 1  Memory Usage: 16kB
+                           Buffers: shared hit=104
+                           ->  Subquery Scan on p  (cost=0.42..8.10 rows=100 width=39) (actual time=0.030..0.248 rows=100 loops=1)
+                                 Buffers: shared hit=104
+                                 ->  Limit  (cost=0.42..7.10 rows=100 width=39) (actual time=0.028..0.236 rows=100 loops=1)
+                                       Buffers: shared hit=104
+                                       ->  Index Scan Backward using pedido_pkey on pedido  (cost=0.42..13361.84 rows=200000 width=39) (actual time=0.028..0.229 rows=100 loops=1)
+                                             Buffers: shared hit=104
+               ->  Memoize  (cost=0.30..4.35 rows=1 width=33) (actual time=0.001..0.001 rows=1 loops=516)
+                     Cache Key: p.cliente_id
+                     Cache Mode: logical
+                     Hits: 416  Misses: 100  Evictions: 0  Overflows: 0  Memory Usage: 14kB
+                     Buffers: shared hit=300
+                     ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..4.34 rows=1 width=33) (actual time=0.002..0.002 rows=1 loops=100)
+                           Index Cond: (id = p.cliente_id)
+                           Buffers: shared hit=300
+         ->  Index Scan using produto_pkey on produto pr  (cost=0.29..0.31 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=516)
+               Index Cond: (id = i.produto_id)
+               Buffers: shared hit=1548
+ Planning:
+   Buffers: shared hit=202
+ Planning Time: 1.627 ms
+ Execution Time: 136.483 ms
+(37 rows)

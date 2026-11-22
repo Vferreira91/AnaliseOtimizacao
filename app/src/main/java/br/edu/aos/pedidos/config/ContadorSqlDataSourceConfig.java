@@ -43,12 +43,13 @@ public class ContadorSqlDataSourceConfig {
 
         @Override
         public void beforeQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
-            // nada a fazer antes da execução
+            ContadorSql.antesDaExecucao();
         }
 
         @Override
         public void afterQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
-            ContadorSql.registrar(execInfo.getElapsedTime());
+            // execInfo.getElapsedTime() tem resolução de 1 ms; o ContadorSql mede em ns.
+            ContadorSql.depoisDaExecucao();
         }
     }
 }

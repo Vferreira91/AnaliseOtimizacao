@@ -1,0 +1,18 @@
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=2051.90..2057.05 rows=2060 width=39) (actual time=2.211..2.282 rows=1971 loops=1)
+   Sort Key: data_pedido DESC
+   Sort Method: quicksort  Memory: 177kB
+   Buffers: shared hit=1198
+   ->  Bitmap Heap Scan on pedido  (cost=80.39..1938.51 rows=2060 width=39) (actual time=0.388..1.842 rows=1971 loops=1)
+         Recheck Cond: (cliente_id = 1)
+         Heap Blocks: exact=1180
+         Buffers: shared hit=1195
+         ->  Bitmap Index Scan on idx_pedido_cliente_data  (cost=0.00..79.87 rows=2060 width=0) (actual time=0.273..0.274 rows=1971 loops=1)
+               Index Cond: (cliente_id = 1)
+               Buffers: shared hit=15
+ Planning:
+   Buffers: shared hit=146
+ Planning Time: 0.833 ms
+ Execution Time: 2.481 ms
+(15 rows)

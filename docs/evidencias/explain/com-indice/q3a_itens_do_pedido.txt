@@ -1,0 +1,10 @@
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_item_pedido_pedido on item_pedido  (cost=0.43..8.55 rows=7 width=26) (actual time=0.048..0.050 rows=8 loops=1)
+   Index Cond: (pedido_id = 199990)
+   Buffers: shared hit=7
+ Planning:
+   Buffers: shared hit=85
+ Planning Time: 0.580 ms
+ Execution Time: 0.132 ms
+(7 rows)

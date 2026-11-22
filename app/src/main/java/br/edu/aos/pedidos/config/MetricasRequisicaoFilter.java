@@ -1,6 +1,7 @@
 package br.edu.aos.pedidos.config;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -44,10 +45,10 @@ public class MetricasRequisicaoFilter extends OncePerRequestFilter {
         } finally {
             ContadorSql.Totais totais = ContadorSql.atual();
             ContadorSql.encerrar();
-            long decorridoMs = (System.nanoTime() - inicio) / 1_000_000;
+            double decorridoMs = (System.nanoTime() - inicio) / 1_000_000.0;
             wrapper.setHeader(SQL_COUNT, Long.toString(totais.consultas()));
-            wrapper.setHeader(SQL_MS, Long.toString(totais.tempoMs()));
-            wrapper.setHeader(ELAPSED_MS, Long.toString(decorridoMs));
+            wrapper.setHeader(SQL_MS, String.format(Locale.ROOT, "%.2f", totais.tempoMs()));
+            wrapper.setHeader(ELAPSED_MS, String.format(Locale.ROOT, "%.2f", decorridoMs));
             wrapper.copyBodyToResponse();
         }
     }

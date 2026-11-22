@@ -1,0 +1,33 @@
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=1458.15..1459.89 rows=696 width=103) (actual time=4.494..4.514 rows=516 loops=1)
+   Sort Key: pedido.id DESC, i.id
+   Sort Method: quicksort  Memory: 98kB
+   Buffers: shared hit=2180
+   ->  Nested Loop  (cost=347.13..1425.29 rows=696 width=103) (actual time=2.957..4.263 rows=516 loops=1)
+         Buffers: shared hit=2177
+         ->  Nested Loop  (cost=346.85..1212.37 rows=696 width=90) (actual time=2.947..3.433 rows=516 loops=1)
+               Buffers: shared hit=629
+               ->  Hash Join  (cost=346.42..354.37 rows=100 width=64) (actual time=2.929..3.162 rows=100 loops=1)
+                     Hash Cond: (pedido.cliente_id = c.id)
+                     Buffers: shared hit=225
+                     ->  Limit  (cost=0.42..7.10 rows=100 width=39) (actual time=0.028..0.233 rows=100 loops=1)
+                           Buffers: shared hit=104
+                           ->  Index Scan Backward using pedido_pkey on pedido  (cost=0.42..13368.87 rows=199997 width=39) (actual time=0.028..0.225 rows=100 loops=1)
+                                 Buffers: shared hit=104
+                     ->  Hash  (cost=221.00..221.00 rows=10000 width=33) (actual time=2.829..2.830 rows=10000 loops=1)
+                           Buckets: 16384  Batches: 1  Memory Usage: 775kB
+                           Buffers: shared hit=121
+                           ->  Seq Scan on cliente c  (cost=0.00..221.00 rows=10000 width=33) (actual time=0.003..1.116 rows=10000 loops=1)
+                                 Buffers: shared hit=121
+               ->  Index Scan using idx_item_pedido_pedido on item_pedido i  (cost=0.43..8.51 rows=7 width=34) (actual time=0.001..0.002 rows=5 loops=100)
+                     Index Cond: (pedido_id = pedido.id)
+                     Buffers: shared hit=404
+         ->  Index Scan using produto_pkey on produto pr  (cost=0.29..0.31 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=516)
+               Index Cond: (id = i.produto_id)
+               Buffers: shared hit=1548
+ Planning:
+   Buffers: shared hit=273
+ Planning Time: 2.003 ms
+ Execution Time: 4.891 ms
+(30 rows)

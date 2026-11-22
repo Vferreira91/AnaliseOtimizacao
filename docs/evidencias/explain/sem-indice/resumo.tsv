@@ -1,0 +1,9 @@
+# rotulo=sem-indice data=2026-11-21T21:13:18-03:00 repeticoes=6 (a 1ª é aquecimento)
+indices: (nenhum)
+caso	mediana_ms	execucoes_ms
+q1_cliente_tipico	10.364	10.424 10.241 10.559 10.364 10.148
+q1_cliente_pesado	9.910	9.789 9.747 9.976 10.298 9.910
+q2_seletivo	11.318	11.815 10.660 11.318 11.731 11.270
+q2_amplo	60.812	62.780 59.823 60.812 63.300 60.412
+q3a_itens_do_pedido	28.449	28.513 28.449 27.826 28.043 28.581
+q3b_join_recentes	138.129	136.180 138.129 138.655 139.631 136.483

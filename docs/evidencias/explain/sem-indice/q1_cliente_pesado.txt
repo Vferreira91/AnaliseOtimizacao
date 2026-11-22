@@ -1,0 +1,15 @@
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
+ Sort  (cost=4342.12..4346.65 rows=1813 width=39) (actual time=9.666..9.747 rows=1971 loops=1)
+   Sort Key: data_pedido DESC
+   Sort Method: quicksort  Memory: 177kB
+   Buffers: shared hit=1747
+   ->  Seq Scan on pedido  (cost=0.00..4244.00 rows=1813 width=39) (actual time=0.011..9.233 rows=1971 loops=1)
+         Filter: (cliente_id = 1)
+         Rows Removed by Filter: 198029
+         Buffers: shared hit=1744
+ Planning:
+   Buffers: shared hit=92
+ Planning Time: 0.705 ms
+ Execution Time: 9.910 ms
+(12 rows)
